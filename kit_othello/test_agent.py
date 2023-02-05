@@ -4,7 +4,7 @@ import advsearch.othello.board as board
 import advsearch.othello.gamestate as gamestate
 import advsearch.timer as timer
 
-import advsearch.your_agent.agent as agent  # change your_agent by the name of your agent module
+import advsearch.robert_rogers.agent as agent  # change your_agent by the name of your agent module
 
 
 class TestAgent(unittest.TestCase):
