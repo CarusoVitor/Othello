@@ -7,6 +7,7 @@ import xml.dom.minidom
 
 from advsearch.othello.board import Board
 from advsearch.othello.gamestate import GameState
+from advsearch.robert_rogers.agent import coin_parity, make_move
 import advsearch.timer as timer
 
 def player_name(player_dir:str) -> str:
@@ -221,30 +222,36 @@ class Server(object):
         f.close()
 
 
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser(description='Othello server.')
+#     parser.add_argument('players', metavar='player', type=str, nargs=2,
+#                         help='Path to player directory')
+#     parser.add_argument('-d', '--delay', type=float, metavar='delay',
+#                         default=5.0,
+#                         help='Time allocated for players to make a move.')
+
+#     parser.add_argument('-p', '--pace', type=float,
+#                         default=0,
+#                         help='Pace of the match: time to wait to display a move '
+#                              '(if a player returns a move before the delay/timeout).')
+
+#     parser.add_argument('-l', '--log-history', type=str, dest='history',
+#                         default='history.txt', metavar='log-history',
+#                         help='File to save game log (history).')
+
+#     parser.add_argument('-o', '--output-file', type=str, dest='output',
+#                         default='results.xml', metavar='output-file',
+#                         help='File to save game details (includes history)')
+
+#     args = parser.parse_args()
+#     p1, p2 = args.players
+
+#     s = Server(p1, p2, args.delay, args.history, args.output, args.pace)
+#     s.run()
+#     s.write_output()
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Othello server.')
-    parser.add_argument('players', metavar='player', type=str, nargs=2,
-                        help='Path to player directory')
-    parser.add_argument('-d', '--delay', type=float, metavar='delay',
-                        default=5.0,
-                        help='Time allocated for players to make a move.')
-
-    parser.add_argument('-p', '--pace', type=float,
-                        default=0,
-                        help='Pace of the match: time to wait to display a move '
-                             '(if a player returns a move before the delay/timeout).')
-
-    parser.add_argument('-l', '--log-history', type=str, dest='history',
-                        default='history.txt', metavar='log-history',
-                        help='File to save game log (history).')
-
-    parser.add_argument('-o', '--output-file', type=str, dest='output',
-                        default='results.xml', metavar='output-file',
-                        help='File to save game details (includes history)')
-
-    args = parser.parse_args()
-    p1, p2 = args.players
-
-    s = Server(p1, p2, args.delay, args.history, args.output, args.pace)
-    s.run()
-    s.write_output()
+    state = GameState(Board(), 'W')
+    state = state.next_state(make_move(state))
+    print(state.board)
+    print(coin_parity(state))
