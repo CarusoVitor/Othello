@@ -1,7 +1,6 @@
-import random
+from multiprocessing.pool import ThreadPool
 from typing import Tuple
 from advsearch.othello.board import Board
-
 from advsearch.othello.gamestate import GameState
 
 # Voce pode criar funcoes auxiliares neste arquivo
@@ -10,7 +9,7 @@ from advsearch.othello.gamestate import GameState
 # Nao esqueca de renomear 'your_agent' com o nome
 # do seu agente.
 
-MAX_DEPTH = 4
+MAX_DEPTH = 1
 
 def make_move(state: GameState) -> Tuple[int, int]:
     """
@@ -25,21 +24,27 @@ def make_move(state: GameState) -> Tuple[int, int]:
     return move
 
 
+
+
 def minimax(state: GameState) -> Tuple[int, int]:
     alpha = float("-inf")
     beta = float("inf")
     max_value = float("-inf")
 
-    best_move = (-1, -1) # sem movimentos por padrão
+    if not state.is_terminal():
+        legal_moves = state.legal_moves()
+        pool = ThreadPool(len(legal_moves))
 
-    legal_moves = state.legal_moves()
-    for successor in legal_moves:
-        # chama o min para cada sucessor, inicializando aqui o primeiro max
-        # assim é possível manter o track de qual sucessor possui o maior valor
-        value_max_move = min_move(state.next_state(successor), alpha, beta)
-        if value_max_move > max_value:
-            max_value = value_max_move
-            best_move = successor
+        result = pool.starmap_async(min_move, [(state.next_state(successor), alpha, beta) for successor in state.legal_moves()])
+
+        for value in result.get():
+            print(value)
+
+        pool.close()
+
+        # if value_max_move > max_value:
+        #     max_value = value_max_move
+        #     best_move = successor
 
     return best_move
 
@@ -67,6 +72,9 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
         if beta <= alpha:
             break
     return beta
+
+
+
 
 
 # Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
@@ -121,7 +129,7 @@ def mobility(state: GameState):
 
 
 def state_evaluation(state: GameState) -> float:
-    return mobility(state)
+    return 0.6*coin_parity(state) + 0.4*corners_captured(state)
 
 
 if __name__ == "__main__":
