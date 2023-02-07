@@ -1,0 +1,13 @@
+.idea/
+advsearch/__pycache__/timer.cpython-310.pyc
+advsearch/othello/__pycache__/__init__.cpython-310.pyc
+advsearch/othello/__pycache__/gamestate.cpython-310.pyc
+advsearch/othello/__pycache__/board.cpython-310.pyc
+advsearch/randomplayer/__pycache__/__init__.cpython-310.pyc
+advsearch/randomplayer/__pycache__/agent.cpython-310.pyc
+advsearch/robert_rogers/__pycache__/__init__.cpython-310.pyc
+advsearch/robert_rogers/__pycache__/agent.cpython-310.pyc
+advsearch/test_comparer/__pycache__/__init__.cpython-310.pyc
+advsearch/test_comparer/__pycache__/agent.cpython-310.pyc
+history.txt
+results.xml
