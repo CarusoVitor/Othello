@@ -80,7 +80,7 @@ class Server(object):
         print(f'---- Current match: {self.player_dirs[Board.BLACK]} (B) x (W) {self.player_dirs[Board.WHITE]} ----')
         print('Initial board:')
         print(self.state.board.decorated_str(colors=False))
-
+        elapsed_avg = []
         while True:  # runs until endgame
             # creates auxiliary variables for better readability
             current_player = self.state.player
@@ -108,6 +108,7 @@ class Server(object):
 
                 self.result = 0 if p1_score > p2_score else 1 if p2_score > p1_score else 2
                 self.finish = time.localtime()
+                print(sum(elapsed_avg) / len(elapsed_avg))
                 return self.result
             
             # disqualify player if it attempts illegal moves 5 times in a row
@@ -119,6 +120,7 @@ class Server(object):
 
                 self.result = 0 if current_player == Board.WHITE else 1
                 self.finish = time.localtime()
+
                 return self.result
 
             # if this player is moving twice, shows a message that the opponent has no legal moves
@@ -137,7 +139,7 @@ class Server(object):
             move = function_call.run(delay)
                 
             elapsed = time.time() - start
-
+            elapsed_avg.append(elapsed)
             if move is None:  # detects timeout
                 print(f'Player {current_player} has not made a move and lost its turn. Illegal moves count incremented')
                 illegal_count[current_player] += 1

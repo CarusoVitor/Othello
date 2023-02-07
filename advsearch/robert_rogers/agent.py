@@ -9,7 +9,7 @@ from advsearch.othello.gamestate import GameState
 # Nao esqueca de renomear 'your_agent' com o nome
 # do seu agente.
 
-MAX_DEPTH = 1
+MAX_DEPTH = 4
 
 def make_move(state: GameState) -> Tuple[int, int]:
     """
@@ -24,8 +24,6 @@ def make_move(state: GameState) -> Tuple[int, int]:
     return move
 
 
-
-
 def minimax(state: GameState) -> Tuple[int, int]:
     alpha = float("-inf")
     beta = float("inf")
@@ -35,16 +33,15 @@ def minimax(state: GameState) -> Tuple[int, int]:
         legal_moves = state.legal_moves()
         pool = ThreadPool(len(legal_moves))
 
+        # inicia uma thread pra cada sucessor
         result = pool.starmap_async(min_move, [(state.next_state(successor), alpha, beta) for successor in state.legal_moves()])
 
-        for value in result.get():
-            print(value)
-
+        # desempacota os valores, considerando que as threads retornam os valores na ordem original passada pra elas
+        for i, value_max_move in enumerate(result.get()):
+            if value_max_move > max_value:
+                max_value = value_max_move
+                best_move = list(legal_moves)[i]
         pool.close()
-
-        # if value_max_move > max_value:
-        #     max_value = value_max_move
-        #     best_move = successor
 
     return best_move
 
@@ -72,9 +69,6 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
         if beta <= alpha:
             break
     return beta
-
-
-
 
 
 # Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
@@ -129,7 +123,7 @@ def mobility(state: GameState):
 
 
 def state_evaluation(state: GameState) -> float:
-    return 0.6*coin_parity(state) + 0.4*corners_captured(state)
+    return (0.3*coin_parity(state))*2 + 0.7*corners_captured(state)
 
 
 if __name__ == "__main__":
