@@ -121,10 +121,4 @@ def corners_captured(state: GameState) -> float:
 
 
 def state_evaluation(state: GameState) -> float:
-    return corners_captured(state)
-
-
-if __name__ == "__main__":
-    state = GameState(Board(), Board.BLACK)
-    move = minimax(state)
-    print(move)
+    return coin_parity(state)

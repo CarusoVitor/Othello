@@ -77,7 +77,7 @@ class Board(object):
 
     # for printing on text user interface
     PIECEMAP = {
-        BLACK: '[black]⬤[/fg]',
+        BLACK: '[000000]⬤[/fg]',
         WHITE: '[ffffff]⬤[/fg]',
         EMPTY: '-'
     }
