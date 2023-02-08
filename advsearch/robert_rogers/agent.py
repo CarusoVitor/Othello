@@ -82,7 +82,9 @@ def coin_parity(state: GameState) -> float:
 def corners_captured(state: GameState) -> float:
     max_player_corners : int = 0
     min_player_corners : int = 0
+    common_player_corners : int = 0
 
+    # Captured corners
     ul_corner = state.board.tiles[0][0]
     bl_corner = state.board.tiles[-1][0]
     ur_corner = state.board.tiles[0][-1]
@@ -108,10 +110,45 @@ def corners_captured(state: GameState) -> float:
     elif br_corner == Board.opponent(AGENT_COLOR):
         min_player_corners += 1
     
-    if max_player_corners + min_player_corners == 0:
+    # Potencial corners
+    max_legal_moves : set = state.board.legal_moves(AGENT_COLOR)
+    min_legal_moves : set = state.board.legal_moves(Board.opponent(AGENT_COLOR))
+    
+    if (0, 0) in max_legal_moves and (0, 0) in min_legal_moves:
+        common_player_corners += 1
+    if (0, 0) in max_legal_moves:
+        max_player_corners += 1
+    if (0, 0) in min_legal_moves:
+        min_player_corners += 1
+
+    if (7, 0) in max_legal_moves and (7, 0) in min_legal_moves:
+        common_player_corners += 1
+    if (7, 0) in max_legal_moves:
+        max_player_corners += 1
+    if (7, 0) in min_legal_moves:
+        min_player_corners += 1
+        
+    if (0, 7) in max_legal_moves and (0, 7) in min_legal_moves:
+        common_player_corners += 1
+    if (0, 7) in max_legal_moves:
+        max_player_corners += 1
+    if (0, 7) in min_legal_moves:
+        min_player_corners += 1
+        
+    if (7, 7) in max_legal_moves and (7, 7) in min_legal_moves:
+        common_player_corners += 1
+    if (7, 7) in max_legal_moves:
+        max_player_corners += 1
+    if (7, 7) in min_legal_moves:
+        min_player_corners += 1
+    
+    numerator = max_player_corners - min_player_corners - common_player_corners
+    denominator = max_player_corners + min_player_corners + common_player_corners
+    
+    if denominator == 0:
         return 0.0
     
-    return 100 * (max_player_corners - min_player_corners)/(max_player_corners + min_player_corners)
+    return 100 * numerator/denominator
 
 
 def mobility(state: GameState):
@@ -124,4 +161,4 @@ def mobility(state: GameState):
 
 
 def state_evaluation(state: GameState) -> float:
-    return coin_parity(state) * 0.3 + mobility(state) * 0.5 + corners_captured(state) * 0.2
+    return coin_parity(state) * 0.5 + mobility(state) * 0.2 + corners_captured(state) * 0.3

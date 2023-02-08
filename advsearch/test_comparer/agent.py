@@ -124,4 +124,4 @@ def mobility(state: GameState):
 
 
 def state_evaluation(state: GameState) -> float:
-     return coin_parity(state) * 0.3 + mobility(state) * 0.5 + corners_captured(state) * 0.2
+    return coin_parity(state) * 0.3 + mobility(state) * 0.5 + corners_captured(state) * 0.2
