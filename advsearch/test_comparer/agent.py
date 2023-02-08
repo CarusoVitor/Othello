@@ -2,7 +2,6 @@ from multiprocessing.pool import ThreadPool
 from typing import Tuple
 from advsearch.othello.board import Board
 from advsearch.othello.gamestate import GameState
-from numpy import argmax
 
 # Voce pode criar funcoes auxiliares neste arquivo
 # e tambem modulos auxiliares neste pacote.
@@ -33,14 +32,18 @@ def minimax(state: GameState) -> Tuple[int, int]:
     pool = ThreadPool(len(legal_moves))
 
     # inicia uma thread pra cada sucessor
-    moves = pool.starmap(min_move, [(state.next_state(successor), float("-inf"), float("inf"), 1) for successor in legal_moves])
+    moves_values = pool.starmap(min_move, [(state.next_state(successor), float("-inf"), float("inf"), 1) for successor in legal_moves])
     pool.close()
     pool.join()
 
+    max_value = float("-inf")
     # desempacota os valores, considerando que as threads retornam os valores na ordem original passada pra elas,
-    if len(moves) > 0:
-        best_move = list(legal_moves)[argmax(moves)]
-    return best_move
+    for i, move_value in enumerate(moves_values):
+        if move_value > max_value:
+            max_value = move_value
+            best_move = i
+
+    return list(legal_moves)[best_move]
 
 def max_move(state: GameState, alpha: float, beta: float, depth=0):
     if depth >= MAX_DEPTH or state.is_terminal():
@@ -124,4 +127,4 @@ def mobility(state: GameState):
 
 
 def state_evaluation(state: GameState) -> float:
-    return coin_parity(state) * 0.4 + mobility(state) * 0.1 + corners_captured(state) * 0.5
+    return corners_captured(state)
