@@ -165,7 +165,7 @@ class Server(object):
             else:
                 print(f'Player {current_player} move {move}_ILLEGAL!')
                 illegal_count[current_player] += 1
-
+            print(elapsed)
             # waits the remaining time, if needed
             if self.pace - elapsed > 0:
                 time.sleep(self.pace - elapsed)

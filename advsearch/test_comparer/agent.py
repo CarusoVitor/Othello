@@ -10,7 +10,8 @@ from advsearch.othello.gamestate import GameState
 # Nao esqueca de renomear 'your_agent' com o nome
 # do seu agente.
 
-MAX_DEPTH = 4
+MAX_DEPTH = 3
+
 
 def make_move(state: GameState) -> Tuple[int, int]:
     """
@@ -28,18 +29,17 @@ def make_move(state: GameState) -> Tuple[int, int]:
 def minimax(state: GameState) -> Tuple[int, int]:
     alpha = float("-inf")
     beta = float("inf")
-
-    best_move = (-1, -1) # sem movimentos por padrão
     max_value = float("-inf")
 
-    if len(state.legal_moves()) > 0:
-        for successor in state.legal_moves():
-            # chama o min para cada sucessor, inicializando aqui o primeiro max
-            # assim é possível manter o track de qual sucessor possui o maior valor
-            value_max_move = min_move(state.next_state(successor), alpha, beta)
-            if value_max_move > max_value:
-                max_value = value_max_move
-                best_move = successor
+    best_move = (-1, -1)  # sem movimentos por padrão
+
+    for successor in state.legal_moves():
+        # chama o min para cada sucessor, inicializando aqui o primeiro max
+        # assim é possível manter o track de qual sucessor possui o maior valor
+        value_max_move = min_move(state.next_state(successor), alpha, beta)
+        if value_max_move > max_value:
+            max_value = value_max_move
+            best_move = successor
 
     return best_move
 
@@ -50,7 +50,7 @@ def max_move(state: GameState, alpha: float, beta: float, depth=0):
 
     value = float("-inf")
     for successor in state.legal_moves():
-        value = max(value, min_move(state.next_state(successor), alpha, beta, depth+1))
+        value = max(value, min_move(state.next_state(successor), alpha, beta, depth + 1))
         alpha = max(alpha, value)
         if alpha >= beta:
             break
@@ -72,22 +72,22 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
 
 # Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
 def coin_parity(state: GameState) -> float:
-    max_player_sum : int = 0
-    min_player_sum : int = 0
-    
+    max_player_sum: int = 0
+    min_player_sum: int = 0
+
     for row in state.board.tiles:
         for tile in row:
             if tile == state.player:
                 max_player_sum += 1
             elif tile != state.board.EMPTY:
                 min_player_sum += 1
-                
-    return 100 * (max_player_sum - min_player_sum)/(max_player_sum + min_player_sum)
+
+    return 100 * (max_player_sum - min_player_sum) / (max_player_sum + min_player_sum)
 
 
 def corners_captured(state: GameState) -> float:
-    max_player_corners : int = 0
-    min_player_corners : int = 0
+    max_player_corners: int = 0
+    min_player_corners: int = 0
 
     ul_corner = state.board.tiles[0][0]
     bl_corner = state.board.tiles[-1][0]
@@ -113,12 +113,28 @@ def corners_captured(state: GameState) -> float:
         max_player_corners += 1
     elif br_corner != state.board.EMPTY:
         min_player_corners += 1
-    
+
     if max_player_corners + min_player_corners == 0:
         return 0.0
-    
-    return 100 * (max_player_corners - min_player_corners)/(max_player_corners + min_player_corners)
+
+    return 100 * (max_player_corners - min_player_corners) / (max_player_corners + min_player_corners)
+
+
+def mobility(state: GameState):
+    # if player_move_total + opponent_move_total == 0:
+    if state.is_terminal():
+        return 0.0
+    else:
+        player_move_total = len(state.legal_moves())
+        opponent_move_total = len(state.board.legal_moves(Board.opponent(state.player)))
+        return 100 * (player_move_total - opponent_move_total) / (player_move_total + opponent_move_total)
 
 
 def state_evaluation(state: GameState) -> float:
-    return coin_parity(state)
+    return coin_parity(state) * 0.3 + mobility(state) * 0.7
+
+
+if __name__ == "__main__":
+    state = GameState(Board(), Board.BLACK)
+    move = minimax(state)
+    print(move)

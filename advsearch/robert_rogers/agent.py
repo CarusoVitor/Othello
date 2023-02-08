@@ -28,21 +28,20 @@ def make_move(state: GameState) -> Tuple[int, int]:
 def minimax(state: GameState) -> Tuple[int, int]:
     alpha = float("-inf")
     beta = float("inf")
-
-    best_move = (-1, -1) # sem movimentos por padrão
     max_value = float("-inf")
 
-    if len(state.legal_moves()) > 0:
-        for successor in state.legal_moves():
-            # chama o min para cada sucessor, inicializando aqui o primeiro max
-            # assim é possível manter o track de qual sucessor possui o maior valor
-            value_max_move = min_move(state.next_state(successor), alpha, beta)
-            if value_max_move > max_value:
-                max_value = value_max_move
-                best_move = successor
+    best_move = (-1, -1) # sem movimentos por padrão
+
+    legal_moves = state.legal_moves()
+    for successor in legal_moves:
+        # chama o min para cada sucessor, inicializando aqui o primeiro max
+        # assim é possível manter o track de qual sucessor possui o maior valor
+        value_max_move = min_move(state.next_state(successor), alpha, beta)
+        if value_max_move > max_value:
+            max_value = value_max_move
+            best_move = successor
 
     return best_move
-
 
 def max_move(state: GameState, alpha: float, beta: float, depth=0):
     if depth >= MAX_DEPTH or state.is_terminal():
@@ -72,16 +71,8 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
 
 # Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
 def coin_parity(state: GameState) -> float:
-    max_player_sum : int = 0
-    min_player_sum : int = 0
-    
-    for row in state.board.tiles:
-        for tile in row:
-            if tile == state.player:
-                max_player_sum += 1
-            elif tile != state.board.EMPTY:
-                min_player_sum += 1
-                
+    max_player_sum : int = state.board.piece_count[state.player]
+    min_player_sum : int = state.board.piece_count[Board.opponent(state.player)]
     return 100 * (max_player_sum - min_player_sum)/(max_player_sum + min_player_sum)
 
 
@@ -120,8 +111,17 @@ def corners_captured(state: GameState) -> float:
     return 100 * (max_player_corners - min_player_corners)/(max_player_corners + min_player_corners)
 
 
+def mobility(state: GameState):
+    if state.is_terminal():
+        return 0.0
+    else:
+        player_move_total = state.board.piece_count[state.player]
+        opponent_move_total = state.board.piece_count[Board.opponent(state.player)]
+        return 100 * (player_move_total - opponent_move_total)/(player_move_total + opponent_move_total)
+
+
 def state_evaluation(state: GameState) -> float:
-    return corners_captured(state)
+    return mobility(state)
 
 
 if __name__ == "__main__":
