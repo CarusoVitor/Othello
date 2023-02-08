@@ -1,8 +1,8 @@
-import random
+from multiprocessing.pool import ThreadPool
 from typing import Tuple
 from advsearch.othello.board import Board
-
 from advsearch.othello.gamestate import GameState
+from numpy import argmax
 
 # Voce pode criar funcoes auxiliares neste arquivo
 # e tambem modulos auxiliares neste pacote.
@@ -11,6 +11,7 @@ from advsearch.othello.gamestate import GameState
 # do seu agente.
 
 MAX_DEPTH = 3
+
 
 
 def make_move(state: GameState) -> Tuple[int, int]:
@@ -27,20 +28,18 @@ def make_move(state: GameState) -> Tuple[int, int]:
 
 
 def minimax(state: GameState) -> Tuple[int, int]:
-    alpha = float("-inf")
-    beta = float("inf")
-    max_value = float("-inf")
-
     best_move = (-1, -1)  # sem movimentos por padrão
+    legal_moves = state.legal_moves()
+    pool = ThreadPool(len(legal_moves))
 
-    for successor in state.legal_moves():
-        # chama o min para cada sucessor, inicializando aqui o primeiro max
-        # assim é possível manter o track de qual sucessor possui o maior valor
-        value_max_move = min_move(state.next_state(successor), alpha, beta)
-        if value_max_move > max_value:
-            max_value = value_max_move
-            best_move = successor
+    # inicia uma thread pra cada sucessor
+    moves = pool.starmap(min_move, [(state.next_state(successor), float("-inf"), float("inf")) for successor in legal_moves])
+    pool.close()
+    pool.join()
 
+    # desempacota os valores, considerando que as threads retornam os valores na ordem original passada pra elas,
+    if len(moves) > 0:
+        best_move = list(legal_moves)[argmax(moves)]
     return best_move
 
 
@@ -72,15 +71,14 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
 
 # Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
 def coin_parity(state: GameState) -> float:
-    max_player_sum: int = 0
-    min_player_sum: int = 0
+    if state.is_terminal():
+        return 0.0
 
-    for row in state.board.tiles:
-        for tile in row:
-            if tile == state.player:
-                max_player_sum += 1
-            elif tile != state.board.EMPTY:
-                min_player_sum += 1
+    max_player_sum: int = state.board.piece_count[state.player]
+    min_player_sum: int = state.board.piece_count[Board.opponent(state.player)]
+
+    if max_player_sum - min_player_sum == 0:
+        return 0.0
 
     return 100 * (max_player_sum - min_player_sum) / (max_player_sum + min_player_sum)
 
@@ -121,17 +119,16 @@ def corners_captured(state: GameState) -> float:
 
 
 def mobility(state: GameState):
-    # if player_move_total + opponent_move_total == 0:
     if state.is_terminal():
         return 0.0
     else:
-        player_move_total = len(state.legal_moves())
-        opponent_move_total = len(state.board.legal_moves(Board.opponent(state.player)))
+        player_move_total = state.board.piece_count[state.player]
+        opponent_move_total = state.board.piece_count[Board.opponent(state.player)]
         return 100 * (player_move_total - opponent_move_total) / (player_move_total + opponent_move_total)
 
 
 def state_evaluation(state: GameState) -> float:
-    return coin_parity(state) * 0.3 + mobility(state) * 0.7
+    return coin_parity(state)
 
 
 if __name__ == "__main__":

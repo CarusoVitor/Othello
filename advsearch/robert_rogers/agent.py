@@ -2,6 +2,7 @@ from multiprocessing.pool import ThreadPool
 from typing import Tuple
 from advsearch.othello.board import Board
 from advsearch.othello.gamestate import GameState
+from numpy import argmax
 
 # Voce pode criar funcoes auxiliares neste arquivo
 # e tambem modulos auxiliares neste pacote.
@@ -25,24 +26,18 @@ def make_move(state: GameState) -> Tuple[int, int]:
 
 
 def minimax(state: GameState) -> Tuple[int, int]:
-    alpha = float("-inf")
-    beta = float("inf")
-    max_value = float("-inf")
+    best_move = (-1, -1) # sem movimentos por padrão
+    legal_moves = state.legal_moves()
+    pool = ThreadPool(len(legal_moves))
 
-    if not state.is_terminal():
-        legal_moves = state.legal_moves()
-        pool = ThreadPool(len(legal_moves))
+    # inicia uma thread pra cada sucessor
+    moves = pool.starmap(min_move, [(state.next_state(successor), float("-inf"), float("inf"), 1) for successor in legal_moves])
+    pool.close()
+    pool.join()
 
-        # inicia uma thread pra cada sucessor
-        result = pool.starmap_async(min_move, [(state.next_state(successor), alpha, beta) for successor in state.legal_moves()])
-
-        # desempacota os valores, considerando que as threads retornam os valores na ordem original passada pra elas
-        for i, value_max_move in enumerate(result.get()):
-            if value_max_move > max_value:
-                max_value = value_max_move
-                best_move = list(legal_moves)[i]
-        pool.close()
-
+    # desempacota os valores, considerando que as threads retornam os valores na ordem original passada pra elas,
+    if len(moves) > 0:
+        best_move = list(legal_moves)[argmax(moves)]
     return best_move
 
 def max_move(state: GameState, alpha: float, beta: float, depth=0):
@@ -64,7 +59,7 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
 
     value = float("inf")
     for successor in state.legal_moves():
-        value = min(value, max_move(state.next_state(successor), alpha, beta, depth + 1))
+        value = min(value, max_move(state.next_state(successor), alpha, beta, depth+1))
         beta = min(beta, value)
         if beta <= alpha:
             break
@@ -73,8 +68,15 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
 
 # Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
 def coin_parity(state: GameState) -> float:
+    if state.is_terminal():
+        return 0.0
+
     max_player_sum : int = state.board.piece_count[state.player]
     min_player_sum : int = state.board.piece_count[Board.opponent(state.player)]
+
+    if max_player_sum - min_player_sum == 0:
+        return 0.0
+
     return 100 * (max_player_sum - min_player_sum)/(max_player_sum + min_player_sum)
 
 
@@ -123,7 +125,8 @@ def mobility(state: GameState):
 
 
 def state_evaluation(state: GameState) -> float:
-    return (0.3*coin_parity(state))*2 + 0.7*corners_captured(state)
+    return coin_parity(state)*0.3+mobility(state)*0.5+corners_captured(state)*0.2
+
 
 
 if __name__ == "__main__":
