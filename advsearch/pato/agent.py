@@ -44,7 +44,7 @@ def minimax(state: GameState) -> Tuple[int, int]:
 
 def max_move(state: GameState, alpha: float, beta: float, depth=0):
     if depth >= MAX_DEPTH or state.is_terminal():
-        return state_evaluation(state)
+        return __mixed_heuristic(state)
 
     value = float("-inf")
     for successor in state.legal_moves():
@@ -57,7 +57,7 @@ def max_move(state: GameState, alpha: float, beta: float, depth=0):
 
 def min_move(state: GameState, alpha: float, beta: float, depth=0):
     if depth >= MAX_DEPTH or state.is_terminal():
-        return state_evaluation(state)
+        return __mixed_heuristic(state)
 
     value = float("inf")
     for successor in state.legal_moves():
@@ -67,54 +67,25 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
             break
     return beta
 
+def __simple_points_heuristic(state: GameState) -> int:
+    """
+    Cálcula a heuristíca simplesmente pela quantidade de peças do jogador
+    contra a quantidade de peças do inimigo.
+    """
+    black_count = 0
+    white_count = 0
+    for tile in state.board.tiles:
+        for piece in tile:
+            if piece == Board.BLACK:
+                black_count += 1
+            elif piece == Board.WHITE:
+                white_count += 1
 
-# Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
-def coin_parity(state: GameState) -> float:
-    max_player_sum : int = state.board.num_pieces(AGENT_COLOR)
-    min_player_sum : int = state.board.num_pieces(Board.opponent(AGENT_COLOR))
+    result = black_count - white_count
 
-    if max_player_sum - min_player_sum == 0:
-        return 0.0
+    return result if AGENT_COLOR == Board.BLACK else -result
 
-    return 100 * (max_player_sum - min_player_sum)/(max_player_sum + min_player_sum)
-
-
-def corners_captured(state: GameState) -> float:
-    max_player_corners : int = 0
-    min_player_corners : int = 0
-
-    ul_corner = state.board.tiles[0][0]
-    bl_corner = state.board.tiles[-1][0]
-    ur_corner = state.board.tiles[0][-1]
-    br_corner = state.board.tiles[-1][-1]
-
-    if ul_corner == AGENT_COLOR:
-        max_player_corners += 1
-    elif ul_corner == Board.opponent(AGENT_COLOR):
-        min_player_corners += 1
-
-    if bl_corner == AGENT_COLOR:
-        max_player_corners += 1
-    elif bl_corner == Board.opponent(AGENT_COLOR):
-        min_player_corners += 1
-
-    if ur_corner == AGENT_COLOR:
-        max_player_corners += 1
-    elif ur_corner == Board.opponent(AGENT_COLOR):
-        min_player_corners += 1
-
-    if br_corner == AGENT_COLOR:
-        max_player_corners += 1
-    elif br_corner == Board.opponent(AGENT_COLOR):
-        min_player_corners += 1
-    
-    if max_player_corners + min_player_corners == 0:
-        return 0.0
-    
-    return 100 * (max_player_corners - min_player_corners)/(max_player_corners + min_player_corners)
-
-
-def mobility(state: GameState):
+def __mobility_heuristic(state: GameState):
     if state.is_terminal():
         return 0.0
     else:
@@ -123,5 +94,35 @@ def mobility(state: GameState):
         return 100 * (player_move_total - opponent_move_total)/(player_move_total + opponent_move_total)
 
 
-def state_evaluation(state: GameState) -> float:
-    return coin_parity(state) * 0.4 + mobility(state) * 0.1 + corners_captured(state) * 0.5
+__POINT_MAP = [
+    [120, -20, 20, 5, 5, 20, -20, 120],
+    [-20, -40, -5, -5, -5, -5, -40, -20],
+    [20, -5, 15, 3, 3, 15, -5, 20],
+    [5, -5, 3, 3, 3, 3, -5, 5],
+    [5, -5, 3, 3, 3, 3, -5, 5],
+    [20, -5, 15, 3, 3, 15, -5, 20],
+    [-20, -40, -5, -5, -5, -5, -40, -20],
+    [120, -20, 20, 5, 5, 20, -20, 120],
+]
+
+
+def __point_map_heuristic(state: GameState):
+    player_points = 0
+    enemy_points = 0
+    for x, tile in enumerate(state.board.tiles):
+        for y, piece in enumerate(tile):
+            if piece == AGENT_COLOR:
+                player_points += __POINT_MAP[x][y]
+            elif piece == Board.opponent(AGENT_COLOR):
+                enemy_points += __POINT_MAP[x][y]
+
+    return player_points - enemy_points
+
+
+def __mixed_heuristic(state: GameState) -> int:
+    if state.is_terminal():
+        return __simple_points_heuristic(state)
+
+    point_map_heuristic_result = __point_map_heuristic(state)
+    mobility_heuristic_result = __mobility_heuristic(state)
+    return point_map_heuristic_result * 0.4 + mobility_heuristic_result * 0.6

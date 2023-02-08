@@ -161,4 +161,7 @@ def mobility(state: GameState):
 
 
 def state_evaluation(state: GameState) -> float:
-    return coin_parity(state) * 0.5 + mobility(state) * 0.2 + corners_captured(state) * 0.3
+    # Estimate game progress in a range from [0, 10]
+    #game_progress = 10 * (1 - state.board.num_pieces(Board.EMPTY)/64)
+    
+    return coin_parity(state) * 0.5 + mobility(state) * 0.1 + corners_captured(state)
