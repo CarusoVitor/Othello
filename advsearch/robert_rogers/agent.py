@@ -21,6 +21,8 @@ def make_move(state: GameState) -> Tuple[int, int]:
     # o codigo abaixo apenas retorna um movimento aleatorio valido para
     # a primeira jogada com as pretas.
     # Remova-o e coloque a sua implementacao da poda alpha-beta
+    global AGENT_COLOR 
+    AGENT_COLOR =  state.player
     move = minimax(state)
     return move
 
@@ -68,11 +70,8 @@ def min_move(state: GameState, alpha: float, beta: float, depth=0):
 
 # Heuristicas baseadas em: https://courses.cs.washington.edu/courses/cse573/04au/Project/mini1/RUSSIA/Final_Paper.pdf
 def coin_parity(state: GameState) -> float:
-    if state.is_terminal():
-        return 0.0
-
-    max_player_sum : int = state.board.piece_count[state.player]
-    min_player_sum : int = state.board.piece_count[Board.opponent(state.player)]
+    max_player_sum : int = state.board.num_pieces(AGENT_COLOR)
+    min_player_sum : int = state.board.num_pieces(Board.opponent(AGENT_COLOR))
 
     if max_player_sum - min_player_sum == 0:
         return 0.0
@@ -89,24 +88,24 @@ def corners_captured(state: GameState) -> float:
     ur_corner = state.board.tiles[0][-1]
     br_corner = state.board.tiles[-1][-1]
 
-    if ul_corner == state.player:
+    if ul_corner == AGENT_COLOR:
         max_player_corners += 1
-    elif ul_corner != state.board.EMPTY:
+    elif ul_corner == Board.opponent(AGENT_COLOR):
         min_player_corners += 1
 
-    if bl_corner == state.player:
+    if bl_corner == AGENT_COLOR:
         max_player_corners += 1
-    elif bl_corner != state.board.EMPTY:
+    elif bl_corner == Board.opponent(AGENT_COLOR):
         min_player_corners += 1
 
-    if ur_corner == state.player:
+    if ur_corner == AGENT_COLOR:
         max_player_corners += 1
-    elif ur_corner != state.board.EMPTY:
+    elif ur_corner == Board.opponent(AGENT_COLOR):
         min_player_corners += 1
 
-    if br_corner == state.player:
+    if br_corner == AGENT_COLOR:
         max_player_corners += 1
-    elif br_corner != state.board.EMPTY:
+    elif br_corner == Board.opponent(AGENT_COLOR):
         min_player_corners += 1
     
     if max_player_corners + min_player_corners == 0:
@@ -119,17 +118,10 @@ def mobility(state: GameState):
     if state.is_terminal():
         return 0.0
     else:
-        player_move_total = state.board.piece_count[state.player]
-        opponent_move_total = state.board.piece_count[Board.opponent(state.player)]
+        player_move_total : int = len(state.board.legal_moves(AGENT_COLOR))
+        opponent_move_total : int = len(state.board.legal_moves(Board.opponent(AGENT_COLOR)))
         return 100 * (player_move_total - opponent_move_total)/(player_move_total + opponent_move_total)
 
 
 def state_evaluation(state: GameState) -> float:
-    return coin_parity(state)*0.3+mobility(state)*0.5+corners_captured(state)*0.2
-
-
-
-if __name__ == "__main__":
-    state = GameState(Board(), Board.BLACK)
-    move = minimax(state)
-    print(move)
+    return coin_parity(state) * 0.3 + mobility(state) * 0.5 + corners_captured(state) * 0.2
