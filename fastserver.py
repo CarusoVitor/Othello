@@ -139,12 +139,12 @@ class FastServer(Server):
             f.write('--------------------------\n')
             for i, match_data in enumerate(self.l_match_data):
                 f.write(f'Match {i}:\n {match_data}\n')
-            if match_data.match_status == 0:
-                p1 += 1
-            elif match_data.match_status == 1:
-                p2 += 1
-            else:
-                draw += 1    
+                if match_data.match_status == 0:
+                    p1 += 1
+                elif match_data.match_status == 1:
+                    p2 += 1
+                else:
+                    draw += 1    
             f.write('\n\n\n')
 
         plt.bar(['P1', 'P2', 'DRAW'], [p1, p2, draw])
